@@ -28,3 +28,21 @@ jobs:
           name: ecommerce-jar
           path: target/*.jar
           if-no-files-found: error
+
+      # Docker Hub (على push فقط). Variables:
+      # https://github.com/AhmedWal7d/App-Spring/settings/variables/actions
+      #   DOCKER_USERNAME = اسم مستخدم Docker Hub
+      # Secrets: DOCKER_PASSWORD = Access Token من Docker Hub (سري)
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        if: github.event_name == 'push'
+        run: |
+          docker build -t ${{ vars.DOCKER_USERNAME }}/ecommerce:${{ github.sha }} -t ${{ vars.DOCKER_USERNAME }}/ecommerce:latest .
+          docker push ${{ vars.DOCKER_USERNAME }}/ecommerce:${{ github.sha }}
+          docker push ${{ vars.DOCKER_USERNAME }}/ecommerce:latest
