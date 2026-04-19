@@ -68,8 +68,8 @@ SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-            // ✅ هنا الحل الصح
-          .requestMatchers("/actuator/prometheus").permitAll()
+            .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+            .requestMatchers("/actuator/prometheus").permitAll()
 
             .anyRequest().authenticated()
         )
