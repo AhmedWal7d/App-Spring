@@ -1,8 +1,8 @@
 HELP.md
 target/
 data/
-# نسخة مكررة قديمة من المشروع داخل المجلد (لا ترفعها)
-ecommerce/
+# نسخة مكررة قديمة في جذر المشروع فقط (لا يطابق com/ecommerce في الكود)
+/ecommerce/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
