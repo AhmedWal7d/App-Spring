@@ -30,17 +30,29 @@ jobs:
           if-no-files-found: error
 
       # Docker Hub (على push فقط):
-      # Variables → DOCKER_USERNAME: https://github.com/AhmedWal7d/App-Spring/settings/variables/actions
-      # Secrets → DOCKER_PASSWORD (لازم من تبويب Secrets مش Variables):
-      #   https://github.com/AhmedWal7d/App-Spring/settings/secrets/actions
-      # القيمة = Personal Access Token من hub.docker.com/settings/security
+      # Variable: DOCKER_USERNAME | Secret: DOCKER_PASSWORD (= PAT من hub.docker.com/settings/security)
+      # لازم Secret من تبويب Secrets (مش Variables)
       - name: Log in to Docker Hub
         if: github.event_name == 'push'
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ vars.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+        env:
+          DOCKER_USER: ${{ vars.DOCKER_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_PASS_ALT: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -e
+          PASS="$DOCKER_PASS"
+          if [ -z "$PASS" ]; then PASS="$DOCKER_PASS_ALT"; fi
+          if [ -z "$DOCKER_USER" ]; then
+            echo "::error::Variable DOCKER_USERNAME is empty. Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
+          if [ -z "$PASS" ]; then
+            echo "::error::No Docker Hub token. Add a Repository secret named exactly: DOCKER_PASSWORD"
+            echo "::error::Value = Personal Access Token from https://hub.docker.com/settings/security (NOT the Variables tab)."
+            echo "::error::Secrets page: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            exit 1
+          fi
+          echo "$PASS" | docker login docker.io -u "$DOCKER_USER" --password-stdin
 
       - name: Build and push Docker image
         if: github.event_name == 'push'
