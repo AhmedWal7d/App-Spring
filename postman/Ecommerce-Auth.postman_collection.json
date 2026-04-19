@@ -1,0 +1,149 @@
+{
+	"info": {
+		"_postman_id": "e7c3b2a1-0000-4000-8000-ecommerce-auth",
+		"name": "Ecommerce API — Auth",
+		"description": "مجموعة لاختبار مسارات المصادقة في Spring Boot.\n\nبعد **Login** أو **Register** يتم حفظ `token` تلقائياً في متغيرات المجموعة لاستخدامه في **Get profile (me)**.\n\nالـ JWT يُرسل في الهيدر: `Authorization: Bearer {{token}}`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const j = pm.response.json();",
+									"    if (j && j.token) pm.collectionVariables.set(\"token\", j.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"Test\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"01000000000\"\n}"
+						},
+						"url": "{{baseUrl}}/api/auth/register",
+						"description": "إنشاء حساب جديد. الحد الأدنى لطول كلمة المرور 8 أحرف."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const j = pm.response.json();",
+									"    if (j && j.token) pm.collectionVariables.set(\"token\", j.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": "{{baseUrl}}/api/auth/login",
+						"description": "تسجيل الدخول واستلام JWT في الحقل `token`."
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\"\n}"
+						},
+						"url": "{{baseUrl}}/api/auth/forgot-password",
+						"description": "يطلب OTP بالبريد (لا يُعاد OTP في الـ JSON حسب إعدادات التطبيق)."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": "{{baseUrl}}/api/auth/reset-password",
+						"description": "OTP من البريد، كلمة المرور الجديدة 8 أحرف على الأقل."
+					},
+					"response": []
+				},
+				{
+					"name": "Get profile (me)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/api/auth/me",
+						"description": "يتطلب JWT. نفّذ Login أو Register أولاً لملء `token`."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

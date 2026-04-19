@@ -1,0 +1,735 @@
+{
+	"info": {
+		"_postman_id": "e7c3b2a1-2222-4000-8000-ecommerce-dash-web",
+		"name": "Ecommerce API — Dashboard & Website",
+		"description": "## Overview (English)\n\n### Folders\n- **Dashboard** — Admin CRUD per resource (Mid-banners, Main-slider, Category-tiles, Products). Use `Authorization: Bearer {{adminToken}}` except **Auth**.\n- **Website** — Storefront: **Auth** (full `/api/auth`), **Home** (aggregated home JSON), **Cart**, **Favorites** (wishlist).\n\n### Language query `?lang=`\nAppend **`?lang={{lang}}`** at the **end** of request URLs (collection variable `lang`: `en` or `ar`). Supported by server-side locale resolution for bilingual `message` fields on auth and shared error responses. Set `lang` in collection variables to switch.\n\n### Variables\n| Variable | Purpose |\n|----------|--------|\n| `baseUrl` | e.g. `http://localhost:8080` |\n| `lang` | `en` or `ar` — appended as `?lang={{lang}}` on documented URLs |\n| `token` | User JWT (`ROLE_USER`) — saved by Login (user) |\n| `adminToken` | Admin JWT — saved by Login (admin) |\n| `productId`, `midBannerId`, `slideId`, `tileId` | Path segments for CRUD |\n\n### Cart (authenticated)\n| Method | Path | Body |\n|--------|------|------|\n| GET | `/api/web/cart?lang=…` | — |\n| POST | `/api/web/cart/items?lang=…` | `{ \"productId\", \"quantity\" }` |\n| PUT | `/api/web/cart/items/{productId}?lang=…` | `{ \"quantity\" }` |\n| DELETE | `/api/web/cart/items/{productId}?lang=…` | — |\n\n### Favorites / wishlist (authenticated)\n| Method | Path |\n|--------|------|\n| GET | `/api/web/favorites?lang=…` — list saved products |\n| POST | `/api/web/favorites/{productId}?lang=…` — add |\n| DELETE | `/api/web/favorites/{productId}?lang=…` — remove |\n\n### Bootstrap admin\nSet `app.admin.email` and `app.admin.password` in `application.properties`, then start the app once.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:8080" },
+		{ "key": "lang", "value": "en" },
+		{ "key": "token", "value": "" },
+		{ "key": "adminToken", "value": "" },
+		{ "key": "midBannerId", "value": "1" },
+		{ "key": "slideId", "value": "1" },
+		{ "key": "tileId", "value": "1" },
+		{ "key": "productId", "value": "1" },
+		{ "key": "categoryId", "value": "1" }
+	],
+	"item": [
+		{
+			"name": "Dashboard",
+			"description": "Admin panel — full CRUD per folder. Header: `Authorization: Bearer {{adminToken}}`. Optional `?lang={{lang}}` on URLs for consistent locale in error payloads.",
+			"item": [
+				{
+					"name": "Auth",
+					"description": "Login to populate `{{token}}` or `{{adminToken}}`.",
+					"item": [
+						{
+							"name": "Login — user (ROLE_USER)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"  const j = pm.response.json();",
+											"  if (j && j.token) pm.collectionVariables.set(\"token\", j.token);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/login?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Login — admin (ROLE_ADMIN)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"  const j = pm.response.json();",
+											"  if (j && j.token) pm.collectionVariables.set(\"adminToken\", j.token);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"admin@ecommerce.local\",\n  \"password\": \"ChangeMe123!\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/login?lang={{lang}}",
+								"description": "Uses `app.admin.email` and `app.admin.password` from `application.properties`."
+							}
+						}
+					]
+				},
+				{
+					"name": "Mid-banners",
+					"description": "Mid-page banners — at most **2** banners may be `active` at once.",
+					"item": [
+						{
+							"name": "List — GET all",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/mid-banners?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Create — POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newmid/900/320\",\n  \"titleAr\": \"Arabic title\",\n  \"titleEn\": \"Title\",\n  \"linkHref\": \"/promo\",\n  \"sortOrder\": 2,\n  \"active\": false\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/mid-banners?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Update — PUT by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newmid/900/320\",\n  \"titleAr\": \"Updated AR title\",\n  \"titleEn\": \"Updated title\",\n  \"linkHref\": \"/promo\",\n  \"sortOrder\": 0,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/mid-banners/{{midBannerId}}?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Delete — DELETE by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/mid-banners/{{midBannerId}}?lang={{lang}}"
+							}
+						}
+					]
+				},
+				{
+					"name": "Main-slider",
+					"description": "Main hero slider — `/api/admin/home/main-slides`.",
+					"item": [
+						{
+							"name": "List — GET all",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/home/main-slides?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Create — POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newslide/1600/700\",\n  \"titleAr\": \"Arabic title\",\n  \"titleEn\": \"Title\",\n  \"subtitleAr\": \"Short AR\",\n  \"subtitleEn\": \"Short subtitle\",\n  \"ctaLabelAr\": \"Shop AR\",\n  \"ctaLabelEn\": \"Shop\",\n  \"ctaHref\": \"/offer\",\n  \"sortOrder\": 10,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/home/main-slides?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Update — PUT by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newslide/1600/700\",\n  \"titleAr\": \"Arabic title\",\n  \"titleEn\": \"Title\",\n  \"subtitleAr\": \"Subtitle AR\",\n  \"subtitleEn\": \"Subtitle\",\n  \"ctaLabelAr\": \"Shop AR\",\n  \"ctaLabelEn\": \"Shop\",\n  \"ctaHref\": \"/offer\",\n  \"sortOrder\": 1,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/home/main-slides/{{slideId}}?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Delete — DELETE by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/home/main-slides/{{slideId}}?lang={{lang}}"
+							}
+						}
+					]
+				},
+				{
+					"name": "Category-tiles",
+					"description": "Category tiles row — `/api/admin/home/category-tiles`.",
+					"item": [
+						{
+							"name": "List — GET all",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/home/category-tiles?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Create — POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newcat/400/400\",\n  \"titleAr\": \"Category AR\",\n  \"titleEn\": \"Category\",\n  \"sortOrder\": 10,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/home/category-tiles?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Update — PUT by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"imageUrl\": \"https://picsum.photos/seed/newcat/400/400\",\n  \"titleAr\": \"Category AR\",\n  \"titleEn\": \"Category\",\n  \"sortOrder\": 1,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/home/category-tiles/{{tileId}}?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Delete — DELETE by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/home/category-tiles/{{tileId}}?lang={{lang}}"
+							}
+						}
+					]
+				},
+				{
+					"name": "Store categories",
+					"description": "Catalog categories linked to products (`categoryId` on product). **Slug** must be unique. Cannot **DELETE** if any product uses the category.",
+					"item": [
+						{
+							"name": "List — GET all",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/categories?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Create — POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"slug\": \"new-category\",\n  \"titleAr\": \"تصنيف جديد\",\n  \"titleEn\": \"New category\",\n  \"sortOrder\": 10,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/categories?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Update — PUT by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"slug\": \"electronics\",\n  \"titleAr\": \"إلكترونيات\",\n  \"titleEn\": \"Electronics\",\n  \"sortOrder\": 1,\n  \"active\": true\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/categories/{{categoryId}}?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Delete — DELETE by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/categories/{{categoryId}}?lang={{lang}}"
+							}
+						}
+					]
+				},
+				{
+					"name": "Products",
+					"description": "Products. **Create** requires: `sku`, **`categoryId`**, `imageUrl`, `titleAr`, `titleEn`, `currentPrice` (optional fields get defaults). Duplicate `sku` → **409** `sku_taken`. **PUT** may omit optional fields to keep existing values; include `categoryId` to change category.",
+					"item": [
+						{
+							"name": "List — GET all",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/products?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Create — POST",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sku\": \"SKU-NEW-001\",\n  \"categoryId\": 1,\n  \"imageUrl\": \"https://picsum.photos/seed/prodnew/600/600\",\n  \"titleAr\": \"Arabic title\",\n  \"titleEn\": \"English title\",\n  \"currentPrice\": 100\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/products?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Update — PUT by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sku\": \"SKU-001\",\n  \"categoryId\": 1,\n  \"imageUrl\": \"https://picsum.photos/seed/p/600/600\",\n  \"titleAr\": \"Updated AR\",\n  \"titleEn\": \"Updated EN\",\n  \"currentPrice\": 100\n}"
+								},
+								"url": "{{baseUrl}}/api/admin/products/{{productId}}?lang={{lang}}"
+							}
+						},
+						{
+							"name": "Delete — DELETE by id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/admin/products/{{productId}}?lang={{lang}}"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Website",
+			"description": "Suggested flow: **Auth** (register / user login / …) → **Home** → **Cart** / **Favorites**. **Home** is public; **Cart**, **Favorites**, and **GET /me** need `Bearer {{token}}` after login or register.",
+			"item": [
+				{
+					"name": "Auth",
+					"description": "Same as **Dashboard → Auth** plus **Register**, **Forgot/Reset password**, **Me**. Admin and user both use `POST /api/auth/login` with different credentials.",
+					"item": [
+						{
+							"name": "Register — POST /api/auth/register",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"  const j = pm.response.json();",
+											"  if (j && j.token) pm.collectionVariables.set(\"token\", j.token);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"User\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"01000000000\",\n  \"lang\": \"en\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/register?lang={{lang}}",
+								"description": "Creates `ROLE_USER` account. Body `lang` is optional. On 201, `token` is saved to `{{token}}`."
+							}
+						},
+						{
+							"name": "Login — user (ROLE_USER)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"  const j = pm.response.json();",
+											"  if (j && j.token) pm.collectionVariables.set(\"token\", j.token);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/login?lang={{lang}}",
+								"description": "Saves `{{token}}` for **Cart**, **Favorites**, and **GET /me**."
+							}
+						},
+						{
+							"name": "Login — admin (ROLE_ADMIN)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"  const j = pm.response.json();",
+											"  if (j && j.token) pm.collectionVariables.set(\"adminToken\", j.token);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"admin@ecommerce.local\",\n  \"password\": \"ChangeMe123!\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/login?lang={{lang}}",
+								"description": "Saves `{{adminToken}}` for `/api/admin/**`. Credentials from `app.admin.email` / `app.admin.password`."
+							}
+						},
+						{
+							"name": "Forgot password — POST /api/auth/forgot-password",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"user@example.com\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/forgot-password?lang={{lang}}",
+								"description": "Sends OTP by email (OTP may not appear in JSON depending on server config)."
+							}
+						},
+						{
+							"name": "Reset password — POST /api/auth/reset-password",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+								},
+								"url": "{{baseUrl}}/api/auth/reset-password?lang={{lang}}",
+								"description": "OTP from email; new password at least 8 characters."
+							}
+						},
+						{
+							"name": "GET — profile /me",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/auth/me?lang={{lang}}",
+								"description": "Current user profile — requires **Login — user** first (`Bearer {{token}}`)."
+							}
+						}
+					]
+				},
+				{
+					"name": "Home",
+					"description": "Single aggregate: main slider, category row, chosen-for-you, mid banners (up to 2 active).",
+					"item": [
+						{
+							"name": "GET — aggregated home",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/home?lang={{lang}}",
+								"description": "`GET /api/web/home?lang=…` — returns `mainSlider`, `categorySlider`, `chosenForYou`, `midBanners` in one response. No auth."
+							}
+						}
+					]
+				},
+				{
+					"name": "Catalog",
+					"description": "Public storefront catalog: `GET /api/web/categories` and `GET /api/web/products` (optional `?categoryId=`). Same product card shape as home «chosen for you» (includes `categoryId`, `categoryTitleAr` / `En`).",
+					"item": [
+						{
+							"name": "GET — categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/categories?lang={{lang}}"
+							}
+						},
+						{
+							"name": "GET — all products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/products?lang={{lang}}"
+							}
+						},
+						{
+							"name": "GET — products by category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/products?categoryId={{categoryId}}&lang={{lang}}"
+							}
+						}
+					]
+				},
+				{
+					"name": "Checkout",
+					"description": "**Stripe (test)** — Non-empty cart required.\n- **`POST /api/web/checkout/cart-and-session`** → **`cart`** + **`checkout.url`** + `publishableKey`.\n- **`POST /api/web/checkout/session`** → **`url`** only.\n- **`POST /api/web/checkout/payment-intent`** → **`hostedCheckoutUrl`** (payment link) + `publishableKey` + amounts (same as Checkout session).\nOptional body on session routes: `{ \"successUrl\": \"...\", \"cancelUrl\": \"...\" }` or `{}`. Set `app.checkout.base-url` for return URLs.",
+					"item": [
+						{
+							"name": "POST — Cart + Checkout link (سلة + لينك)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": "{{baseUrl}}/api/web/checkout/cart-and-session?lang={{lang}}"
+							}
+						},
+						{
+							"name": "POST — Checkout Session (رابط دفع)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": "{{baseUrl}}/api/web/checkout/session?lang={{lang}}"
+							}
+						},
+						{
+							"name": "POST — payment-intent (hostedCheckoutUrl)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/checkout/payment-intent?lang={{lang}}",
+								"description": "Returns `hostedCheckoutUrl` — open in browser. Test card 4242 4242 4242 4242."
+							}
+						}
+					]
+				},
+				{
+					"name": "Cart",
+					"description": "Cart CRUD — `Authorization: Bearer {{token}}`. Run **Website → Auth → Login (user)** first to set `{{token}}`.",
+					"item": [
+						{
+							"name": "GET — view cart",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/cart?lang={{lang}}",
+								"description": "Returns `cartId`, `lines[]`, `grandTotal`. If no cart yet: `cartId: 0` and empty lines."
+							}
+						},
+						{
+							"name": "POST — add line",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"productId\": 1,\n  \"quantity\": 1\n}"
+								},
+								"url": "{{baseUrl}}/api/web/cart/items?lang={{lang}}",
+								"description": "Merges quantity if the same product already exists. `productId` from `GET /api/web/home` → `chosenForYou.products[].id`."
+							}
+						},
+						{
+							"name": "PUT — update line quantity",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"quantity\": 2\n}"
+								},
+								"url": "{{baseUrl}}/api/web/cart/items/{{productId}}?lang={{lang}}",
+								"description": "Path `productId` is the product id, not a cart line id."
+							}
+						},
+						{
+							"name": "DELETE — remove line",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/cart/items/{{productId}}?lang={{lang}}",
+								"description": "Removes that product from the cart entirely."
+							}
+						}
+					]
+				},
+				{
+					"name": "Favorites",
+					"description": "Wishlist — `Authorization: Bearer {{token}}`. Run **Website → Auth → Login (user)** first. Use `{{productId}}` like cart/home.",
+					"item": [
+						{
+							"name": "GET — list favorites",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "GET",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/favorites?lang={{lang}}",
+								"description": "Lists favorited products (ids, titles, image, prices, href)."
+							}
+						},
+						{
+							"name": "POST — add favorite",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "POST",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/favorites/{{productId}}?lang={{lang}}",
+								"description": "Adds product to wishlist. Idempotent if already saved."
+							}
+						},
+						{
+							"name": "DELETE — remove favorite",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": "{{baseUrl}}/api/web/favorites/{{productId}}?lang={{lang}}",
+								"description": "Removes product from wishlist."
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
