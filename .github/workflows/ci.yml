@@ -29,14 +29,16 @@ jobs:
           path: target/*.jar
           if-no-files-found: error
 
-      # Docker Hub (على push فقط). Variables:
-      # https://github.com/AhmedWal7d/App-Spring/settings/variables/actions
-      #   DOCKER_USERNAME = اسم مستخدم Docker Hub
-      # Secrets: DOCKER_PASSWORD = Access Token من Docker Hub (سري)
+      # Docker Hub (على push فقط):
+      # Variables → DOCKER_USERNAME: https://github.com/AhmedWal7d/App-Spring/settings/variables/actions
+      # Secrets → DOCKER_PASSWORD (لازم من تبويب Secrets مش Variables):
+      #   https://github.com/AhmedWal7d/App-Spring/settings/secrets/actions
+      # القيمة = Personal Access Token من hub.docker.com/settings/security
       - name: Log in to Docker Hub
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
+          registry: docker.io
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
